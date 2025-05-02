@@ -45,7 +45,7 @@ class SAES:
         ]
 
     def key_expansion(self, chave):
-        return [chave[:4], chave[4:]]  # simplificada
+        return [chave[:4], chave[4:]] 
 
     def encrypt_block(self, bloco):
         print("\nBloco original:", bloco)
@@ -61,7 +61,7 @@ class SAES:
         print("AddRoundKey 2:", bloco)
         bloco = self.sub_nibbles(bloco)
         bloco = self.shift_rows(bloco)
-        bloco = self.add_round_key(bloco, self.round_keys[0])  # reutilizando chave
+        bloco = self.add_round_key(bloco, self.round_keys[0]) 
         print("Bloco cifrado:", bloco)
         return bloco
 
@@ -74,7 +74,6 @@ class SAES:
         byte_array = int(bits, 2).to_bytes((len(bits) + 7) // 8, byteorder='big')
         return base64.b64encode(byte_array).decode()
 
-# Parte 2 - ECB com S-AES
 def encrypt_saes_ecb(texto, chave):
     saes = SAES(chave)
     nibbles = saes.texto_para_nibbles(texto)
@@ -86,7 +85,6 @@ def encrypt_saes_ecb(texto, chave):
         resultado += saes.encrypt_block(bloco)
     return saes.nibbles_para_base64(resultado)
 
-# Parte 3 - AES real com biblioteca
 def aes_encrypt_real(mensagem, modo):
     chave = get_random_bytes(16)
     iv = get_random_bytes(16)
@@ -116,7 +114,7 @@ def aes_encrypt_real(mensagem, modo):
 if __name__ == '__main__':
     texto = input("Entre com a mensagem a ser criptografada: \n> ")
     print("=== PARTE 1 ===")
-    chave_simples = [0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8]  # exemplo
+    chave_simples = [0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8] 
     print("=== PARTE 2 ===\nTexto base64 (ECB S-AES):", encrypt_saes_ecb(texto, chave_simples))
 
     print("\n=== PARTE 3 ===")
