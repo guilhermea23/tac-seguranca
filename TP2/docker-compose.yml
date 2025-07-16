@@ -1,0 +1,93 @@
+services:
+  web:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: application
+    hostname: webapp
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    volumes:
+      - ./webapp:/var/www/html
+      - ./docker/apache/logs:/var/log/apache2
+      - ./docker/php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    environment:
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASS=dvwa
+      - DB_NAME=dvwa
+    networks:
+      - sqnet
+    restart: unless-stopped
+
+  db:
+    image: mariadb:10.5
+    container_name: application_mariadb
+    hostname: database
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: dvwa
+      MYSQL_DATABASE: dvwa
+      MYSQL_INITDB_SKIP_TZINFO: 1
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - sqnet
+
+  snort:
+    image: frapsoft/snort:latest
+    container_name: snort
+    hostname: snort
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    command: snort -A console -i eth0 -c /etc/snort/snort.conf
+    volumes:
+      - ./snort:/etc/snort
+      - ./docker/snort/logs:/var/log/snort
+    networks:
+      - sqnet
+    restart: on-failure
+
+  monitor:
+    build:
+      context: ./monitor
+      dockerfile: Dockerfile
+    container_name: monitor
+    hostname: monitor
+    volumes:
+      - ./apache_logs:/logs
+      - ./docker/monitor/config.ini:/app/config.ini
+    networks:
+      - sqnet
+    restart: on-failure
+  mitm-attacker:
+    build: ./attacker/mitm
+    container_name: mitm-attacker
+    cap_add:
+      - NET_ADMIN
+    network_mode: host
+    depends_on:
+      - web
+
+  # sql-attacker:
+  #   build: ./attacker/sql-injection
+  #   container_name: sql-attacker
+  #   networks:
+  #     - sqnet
+  #   depends_on:
+  #     - web
+
+volumes:
+  db_data:
+    name: application_db_data
+
+networks:
+  sqnet:
+    name: application_network
+    driver: bridge
+    attachable: true
